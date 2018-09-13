@@ -12,6 +12,7 @@ from selenium.webdriver.firefox.options import Options
 
 VISIBILITY = True
 RUNNING = True
+TICK_DELAY = 15
 
 def main():
         #Start browser and connect to website
@@ -26,18 +27,26 @@ def main():
         else:
             print("Textfree has been reached\n")
 
+            
+        #Wait for page to load
+        if not (wait_for_page_load(driver, "Username or phone number", 1, 60)):
+            return
+            
         if login(driver) == False:
             return
 
         #Close popup
-        time.sleep(1)
+        if not (wait_for_page_load(driver, "vm.dismiss()", 1, 60)):
+            return
         popup_X = driver.find_element_by_xpath("//div[@ng-click='vm.dismiss()']")
         popup_X.click()
-        time.sleep(1)
-
+        
         #Start loop
         while RUNNING:
-
+            start_time = int(round(time.time() * 1000))
+            wait_for_page_load(driver, "(219) 292-4990", 1, 60)
+            refresh(driver)
+            
             #Check for new messages
             
             
@@ -46,14 +55,30 @@ def main():
                 #If time is appropriate, send message to each subscriber
 
             #Sleep
-        
+            if(int(round(time.time() * 1000)) - start_time) <= (TICK_DELAY * 1000):
+                time.sleep(((TICK_DELAY * 1000) - (int(round(time.time() * 1000)) - start_time))/1000)
 
         print("Program terminated.")
         return
     
+def wait_for_page_load(driver, evidence, delay, timeout):
+    start_time =  int(round(time.time() * 1000))
+    while evidence not in driver.page_source:
+        time.sleep(delay)
+        if (int(round(time.time() * 1000)) - start_time) >= (timeout * 1000):
+            print("Page could not be loaded.")
+            return False
+    return True
+        
+    
 def get_all_senders(driver):
     convos = driver.find_elements_by_xpath("div[@ng-bind='vm.getContactAddressName()']")
     return convos
+
+def refresh(driver):
+    refresh_button = driver.find_element_by_xpath("//span[@id='topBarRefreshIcon']")
+    refresh_button.click()
+    return
 
 def send_message(driver, message):
     #Type a message
@@ -88,8 +113,6 @@ def select_conversation():
 
 def login(driver):
         print("Attempting login...")
-
-        time.sleep(1)
         
         #Find textboxes
         user_input = driver.find_element_by_name("username")
