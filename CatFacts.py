@@ -7,6 +7,7 @@ sys.path.insert(0,parentdir)
 from credentials import user
 from credentials import pw
 import time
+import datetime
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.options import Options
 
@@ -17,15 +18,15 @@ TICK_DELAY = 15
 def main():
         #Start browser and connect to website
         driver = start_browser()
-        print("Directing to textfree")
+        debug("Directing to textfree")
         driver.get("https://www.textfree.us")
 
         #Verify that the website is correct
         if "Textfree" not in driver.title:
-            print("The wrong website has been reached. Check Internet connection and try again.\n")
+            debug("The wrong website has been reached. Check Internet connection and try again.")
             return
         else:
-            print("Textfree has been reached\n")
+            debug("Textfree has been reached")
 
             
         #Wait for page to load
@@ -44,6 +45,8 @@ def main():
         #Start loop
         while RUNNING:
             start_time = int(round(time.time() * 1000))
+            debug("Tick started")
+            debug("Reloading Conversations")
             wait_for_page_load(driver, "(219) 292-4990", 1, 60)
             refresh(driver)
             
@@ -58,17 +61,25 @@ def main():
             if(int(round(time.time() * 1000)) - start_time) <= (TICK_DELAY * 1000):
                 time.sleep(((TICK_DELAY * 1000) - (int(round(time.time() * 1000)) - start_time))/1000)
 
-        print("Program terminated.")
+        debug("Program terminated.")
         return
     
 def wait_for_page_load(driver, evidence, delay, timeout):
     start_time =  int(round(time.time() * 1000))
+    debug("Waiting for page load.")
     while evidence not in driver.page_source:
         time.sleep(delay)
         if (int(round(time.time() * 1000)) - start_time) >= (timeout * 1000):
-            print("Page could not be loaded.")
+            debug("Page could not be loaded.")
             return False
+    debug("Page loaded")
     return True
+
+def debug(message):
+    now = datetime.datetime.now()
+    prefix = now.strftime("[%Y/%m/%d | %X]")
+    print(prefix, message)
+    return
         
     
 def get_all_senders(driver):
@@ -82,17 +93,17 @@ def refresh(driver):
 
 def send_message(driver, message):
     #Type a message
-    print("Typing message...")
+    debug("Typing message...")
     msg_bar = driver.find_element_by_xpath("//div[@class='emojionearea-editor']")
-    print("Attempting to send message...")
+    debug("Attempting to send message...")
     msg_bar.send_keys(message + Keys.ENTER)
-    print("Message sent.\n")
+    debug("Message sent.")
 
 def send_new_message(driver, message, recipient):
     #Start a new convo
-    print("Creating conversation...")
+    debug("Creating conversation...")
     new_message(driver, recipient)
-    print("Conversation created.\n")
+    debug("Conversation created.")
     
     send_message(driver, message)
     
@@ -112,7 +123,7 @@ def select_conversation():
     return
 
 def login(driver):
-        print("Attempting login...")
+        debug("Attempting login...")
         
         #Find textboxes
         user_input = driver.find_element_by_name("username")
@@ -130,22 +141,22 @@ def login(driver):
 
         #Validate
         if "Invalid username or password. Typo perhaps?" in driver.page_source:
-            print("Invalid username or password. Please check credentials file.")
+            debug("Invalid username or password. Please check credentials file.")
             return False
         else:
-            print("Login successful.\n")
+            debug("Login successful.")
             return True
     
 
 def start_browser():
     if (VISIBILITY): #Visible mode
         driver = webdriver.Firefox()
-        print("Firefox initialized\n")
+        debug("Firefox initialized")
     else:            #Invisible mode
         options = Options()
         options.add_argument("--headless")
         driver = webdriver.Firefox(firefox_options=options)
-        print("Firefox initialized in headless mode\n")
+        debug("Firefox initialized in headless mode")
     return driver
 
 main()
